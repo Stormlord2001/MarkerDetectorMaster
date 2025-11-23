@@ -36,8 +36,8 @@ class MarkerTracker:
         self.pose = None
 
         # Using codering to id markers
-        r_code_inner = int(23/downscale_factor)
-        self.r_code_outer = int(30/downscale_factor)
+        r_code_inner = int(21/downscale_factor)
+        self.r_code_outer = int(32/downscale_factor)
         bits = 8
         transitions = 2
         self.decoder = decode_marker(r_code_inner, self.r_code_outer, bits, transitions)
@@ -68,21 +68,24 @@ class MarkerTracker:
         frame_sum_squared = cv2.add(frame_real_squared, frame_imag_squared, dtype=cv2.CV_32F)
 
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(frame_sum_squared)
-        cv2.imshow("frame_sum_squared_norm", 200*255*frame_sum_squared)
+        
         ###cv2.imshow("frame", frame)
         frame_sum_squared_max_circled = cv2.circle(frame_sum_squared.copy(), max_loc, self.kernel_size//2, (255, 255, 255), 2)
         ###cv2.imshow("frame_sum_squared_max_circled", 255*frame_sum_squared_max_circled)
 
-        threshold_value = max_val * 0.75
+        threshold_value = max_val * 0.5
 
         thres_img = np.where(frame_sum_squared > threshold_value, frame_sum_squared, 0)
         min_val, max_val_thresh, min_loc, max_loc_thresh = cv2.minMaxLoc(thres_img)
-        cv2.imshow("thres_img_norm", 255*thres_img/max_val_thresh)
+       
 
 
         frame_sum_text = cv2.putText(frame_sum_squared.copy()*10000, f"max val: {max_val*10000}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
         #cv2.imshow("combined", np.vstack((np.hstack((100*frame_real, 100*frame_imag)),np.hstack((10000*frame_real_squared, 10000*frame_imag_squared)), np.hstack((frame_sum_text, thres_img*10000)))))
+
+        ##cv2.imshow("frame_sum_squared_norm", 1*255*frame_sum_squared)
+        ##cv2.imshow("thres_img_norm", 255*thres_img/max_val_thresh)
 
         # extract conturs
         contours, hierarchy = cv2.findContours(np.uint8(thres_img/max_val_thresh*255), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -96,7 +99,7 @@ class MarkerTracker:
         #cv2.waitKey(0)
 
         if len(contours) > 10:
-            print("Too many contours detected, skipping frame.")
+            print(f"Too many contours detected ({len(contours)}), skipping frame.")
             return []
 
         print(f"length contours: {len(contours)}")
@@ -104,9 +107,9 @@ class MarkerTracker:
             (x, y), radius = cv2.minEnclosingCircle(contour)
             if radius > 2:
                 continue
-            if x - self.r_code_outer < 0 or x + self.r_code_outer >= frame.shape[1]:
+            if x - self.r_code_outer < 0 or x + self.r_code_outer + 1 >= frame.shape[1]:
                 continue
-            if y - self.r_code_outer < 0 or y + self.r_code_outer >= frame.shape[0]:
+            if y - self.r_code_outer < 0 or y + self.r_code_outer + 1 >= frame.shape[0]:
                 continue
             #marker_size = 200
             #marker = frame[int(y)-marker_size:int(y)+marker_size, int(x)-marker_size:int(x)+marker_size]
@@ -116,13 +119,13 @@ class MarkerTracker:
 
             
             frame_sum_cutout = self.extract_window_around_marker_location(frame_sum_squared, (int(x), int(y)))
-            print("frame_sum_cutout shape:", frame_sum_cutout.shape)
+            #print("frame_sum_cutout shape:", frame_sum_cutout.shape)
             #print(frame_sum_cutout)
             min_val_c, max_val_c, min_loc_c, max_loc_c = cv2.minMaxLoc(frame_sum_cutout)
-            print(f"max_loc_c before refining: {max_loc_c}, x: {x}, y: {y}")
+            #print(f"max_loc_c before refining: {max_loc_c}, x: {x}, y: {y}")
             (dx, dy) = self.refine_marker_location_new(frame_sum_squared, max_loc_c[0], max_loc_c[1])
             refined_location = (max_loc_c[0] + dx, max_loc_c[1] + dy)
-            print(f"refined location: {refined_location}, max_loc_c: {max_loc_c}, dx: {dx}, dy: {dy}")
+            #print(f"refined location: {refined_location}, max_loc_c: {max_loc_c}, dx: {dx}, dy: {dy}")
 
             # Decode the marker ID
             #marker_id = self.decoder.extract_and_decode(frame, (int(refined_location[0]), int(refined_location[1])))
@@ -262,7 +265,7 @@ class MarkerTracker:
             # Fit a parabola to the frame_sum_squared marker response
             # and then locate the top of the parabola.
             frame_sum_squared_cutout = frame_sum_squared[x-delta:x+delta+1, y-delta:y+delta+1]
-            print("shape frame_sum_squared_cutout:", frame_sum_squared_cutout.shape)
+            #print("shape frame_sum_squared_cutout:", frame_sum_squared_cutout.shape)
 
             # Taking the square root of the frame_sum_squared improves the accuracy of the 
             # refied marker position.
