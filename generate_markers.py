@@ -26,7 +26,7 @@ bits_list = [int(x) for x in format(code & ((1 << bits) - 1), '0{}b'.format(bits
 print(bits_list)
 
 # ===== N-fold edge marker =====
-r_outer_n_fold = int(r_outer_data * 2/3)
+r_outer_n_fold = int(r_outer_data * 3/5)
 r_inner_n_fold = 0
 folds = 10
 
