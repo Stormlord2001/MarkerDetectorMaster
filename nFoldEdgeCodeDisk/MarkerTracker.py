@@ -136,7 +136,7 @@ class MarkerTracker:
 
             orientation = 0 #self.determine_marker_orientation(frame, frame_real, frame_imag, max_loc_c)
             quality = 0 #self.determine_marker_quality(frame, orientation, max_loc_c)
-            pose = MarkerPose(x, y, orientation, quality, self.order)
+            pose = MarkerPose(refined_location[0], refined_location[1], orientation, quality, self.order)
             pose.id = marker_id
 
             poses.append(pose)

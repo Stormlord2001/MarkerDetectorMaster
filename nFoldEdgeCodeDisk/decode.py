@@ -31,7 +31,7 @@ class decode_marker():
         #print(f"image shape: {bgr_image.shape}, center: {center}, r_code_outer: {self.r_code_outer}")
         marker = bgr_image[int(center[1] - self.r_code_outer):int(center[1] + self.r_code_outer), 
                            int(center[0] - self.r_code_outer):int(center[0] + self.r_code_outer)]
-        print("extracted marker shape:", marker.shape)
+        #print("extracted marker shape:", marker.shape)
         if len(marker.shape) > 2:
             marker_gray = cv2.cvtColor(marker, cv2.COLOR_BGR2GRAY)
             _, marker_bin = cv2.threshold(marker_gray, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -89,7 +89,7 @@ class decode_marker():
         roi = img[x1:x2, y1:y2]
 
         # binary decision for black/white region
-        print(roi.shape)
+        # print(roi.shape)
         black_votes = (roi[self.mask] == 0).sum()
         white_votes = (roi[self.mask] != 0).sum()
 
