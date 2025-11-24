@@ -70,26 +70,17 @@ class MarkerTracker:
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(frame_sum_squared)
         
         ###cv2.imshow("frame", frame)
-        frame_sum_squared_max_circled = cv2.circle(frame_sum_squared.copy(), max_loc, self.kernel_size//2, (255, 255, 255), 2)
-        ###cv2.imshow("frame_sum_squared_max_circled", 255*frame_sum_squared_max_circled)
 
         threshold_value = max_val * 0.5
 
         thres_img = np.where(frame_sum_squared > threshold_value, frame_sum_squared, 0)
         min_val, max_val_thresh, min_loc, max_loc_thresh = cv2.minMaxLoc(thres_img)
        
-
-
-        frame_sum_text = cv2.putText(frame_sum_squared.copy()*10000, f"max val: {max_val*10000}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-
-        #cv2.imshow("combined", np.vstack((np.hstack((100*frame_real, 100*frame_imag)),np.hstack((10000*frame_real_squared, 10000*frame_imag_squared)), np.hstack((frame_sum_text, thres_img*10000)))))
-
-        ##cv2.imshow("frame_sum_squared_norm", 1*255*frame_sum_squared)
+        cv2.imshow("frame_sum_squared_norm", 100*255*frame_sum_squared)
         ##cv2.imshow("thres_img_norm", 255*thres_img/max_val_thresh)
 
-        # extract conturs
+        # extract contours
         contours, hierarchy = cv2.findContours(np.uint8(thres_img/max_val_thresh*255), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contour_img = cv2.cvtColor(np.uint8(frame), cv2.COLOR_GRAY2BGR)
 
         poses = []
 
@@ -111,34 +102,28 @@ class MarkerTracker:
                 continue
             if y - self.r_code_outer < 0 or y + self.r_code_outer + 1 >= frame.shape[0]:
                 continue
-            #marker_size = 200
-            #marker = frame[int(y)-marker_size:int(y)+marker_size, int(x)-marker_size:int(x)+marker_size]
-            
-            #min_val_c, max_val_c, min_loc_c, max_loc_c = cv2.minMaxLoc(marker)
-            #max_loc_c = (max_loc_c[0] + x, max_loc_c[1] + y)
-
             
             frame_sum_cutout = self.extract_window_around_marker_location(frame_sum_squared, (int(x), int(y)))
-            #print("frame_sum_cutout shape:", frame_sum_cutout.shape)
-            #print(frame_sum_cutout)
             min_val_c, max_val_c, min_loc_c, max_loc_c = cv2.minMaxLoc(frame_sum_cutout)
-            #print(f"max_loc_c before refining: {max_loc_c}, x: {x}, y: {y}")
-            (dx, dy) = self.refine_marker_location_new(frame_sum_squared, max_loc_c[0], max_loc_c[1])
-            refined_location = (max_loc_c[0] + dx, max_loc_c[1] + dy)
-            #print(f"refined location: {refined_location}, max_loc_c: {max_loc_c}, dx: {dx}, dy: {dy}")
+
+            print(f"max_loc_c before refining: {max_loc_c}, x: {x}, y: {y}")
+            (dx, dy) = self.refine_marker_location_new(frame_sum_cutout, max_loc_c[1], max_loc_c[0])
+            refined_location = (x-self.x1+max_loc_c[0] + dx, y-self.y1+max_loc_c[1] + dy)
 
             # Decode the marker ID
             #marker_id = self.decoder.extract_and_decode(frame, (int(refined_location[0]), int(refined_location[1])))
-            marker_id = self.decoder.extract_and_decode(frame, (int(x), int(y)))
+            marker_id = self.decoder.extract_and_decode(frame, (int(refined_location[0]), int(refined_location[1])))
             
             if marker_id is None:
                 continue
 
             orientation = 0 #self.determine_marker_orientation(frame, frame_real, frame_imag, max_loc_c)
             quality = 0 #self.determine_marker_quality(frame, orientation, max_loc_c)
+            #pose = MarkerPose(x, y, orientation, quality, self.order)
             pose = MarkerPose(refined_location[0], refined_location[1], orientation, quality, self.order)
             pose.id = marker_id
-
+            #if abs(refined_location[0]-self.x1) > 2 or abs(refined_location[1]-self.y1) > 2:
+            print(f"Detected pos: x: {x}, y: {y}, refined x: {refined_location[0]:.2f}, refined y: {refined_location[1]:.2f}, dx: {dx:.2f}, dy: {dy:.2f} fully refined x: {pose.x:.2f}, fully refined y: {pose.y:.2f}")
             poses.append(pose)
 
         
@@ -284,6 +269,9 @@ class MarkerTracker:
             solution, residuals, rank, s = np.linalg.lstsq(coefficients, values, rcond=None)
             dx = -solution[1] / (2*solution[0])
             dy = -solution[3] / (2*solution[2])
+
+            #print(f"solution: {solution.ravel()}, dx: {dx[0]}, dy: {dy[0]}")
+            #print(f"values: \n{frame_sum_squared_cutout*1000}")
             return dx[0], dy[0]
         except np.linalg.LinAlgError as e:
             # This error is triggered when the marker is detected close to an edge.
@@ -291,6 +279,4 @@ class MarkerTracker:
             print("error in refine_marker_location")
             print(e)
             return 0, 0
-
-
-
+        

@@ -67,7 +67,7 @@ class decode_marker():
                 return None
         else:
             print("marker is bad")
-            scaled = cv2.resize(marker, (0,0), fx=10.0, fy=10.0)
+            #scaled = cv2.resize(marker, (0,0), fx=10.0, fy=10.0)
             #cv2.imshow("marker", scaled)
             #cv2.waitKey(0)
             print("samples:", samples)

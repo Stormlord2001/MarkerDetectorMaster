@@ -2,14 +2,13 @@ from time import time
 
 import cv2
 import numpy as np 
-import math
 
 from MarkerPose import MarkerPose
 from MarkerTracker import MarkerTracker
 from PoseEstimator import PoseEstimator
 
 # parameters
-show_image = False
+show_image = True
 print_debug_messages = False
 print_iteration_time = True
 check_keystroke = True
@@ -75,18 +74,8 @@ class CameraDriver:
         # Convert to grayscale.
         frame_gray = cv2.cvtColor(self.current_frame, cv2.COLOR_BGR2GRAY)
 
-        # binary thresholding with Otsu's method
-        #_, frame_gray = cv2.threshold(frame_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
-        
-        #cv2.imshow("mask", frame_gray)
-
-        # Denoising https://www.youtube.com/watch?v=xtRY_iT41U4 
-        #frame_gray = cv2.medianBlur(frame_gray, 5)
-
-
+        # Downscale image for faster processing.
         reduced_image = cv2.resize(frame_gray, (0, 0), fx=1.0/self.downscale_factor, fy=1.0 / self.downscale_factor)
-
         self.locations = []
         for k in range(len(self.trackers)):
             poses = self.trackers[k].locate_marker(reduced_image)
@@ -137,7 +126,7 @@ def main():
         cd.draw_detected_markers()
         
         if check_keystroke is True:
-            key = cv2.waitKey(10000)
+            key = cv2.waitKey(1000000)
             if key == 27:  # Esc
                     cd.running = False
             # save frame when s is pressed
