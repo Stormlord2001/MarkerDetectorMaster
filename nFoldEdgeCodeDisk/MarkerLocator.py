@@ -2,7 +2,6 @@ from time import time
 
 import cv2
 import numpy as np 
-import math
 
 from MarkerPose import MarkerPose
 from MarkerTracker import MarkerTracker
@@ -75,18 +74,8 @@ class CameraDriver:
         # Convert to grayscale.
         frame_gray = cv2.cvtColor(self.current_frame, cv2.COLOR_BGR2GRAY)
 
-        # binary thresholding with Otsu's method
-        #_, frame_gray = cv2.threshold(frame_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
-        
-        #cv2.imshow("mask", frame_gray)
-
-        # Denoising https://www.youtube.com/watch?v=xtRY_iT41U4 
-        #frame_gray = cv2.medianBlur(frame_gray, 5)
-
-
+        # Downscale image for faster processing.
         reduced_image = cv2.resize(frame_gray, (0, 0), fx=1.0/self.downscale_factor, fy=1.0 / self.downscale_factor)
-
         self.locations = []
         for k in range(len(self.trackers)):
             poses = self.trackers[k].locate_marker(reduced_image)
@@ -116,41 +105,36 @@ class CameraDriver:
 def main():
     # 3840x2160 video: default_kernel_size=73, scaling_parameter=1000, downscale_factor=1
 
-    cd = CameraDriver(list_of_markers_to_find, default_kernel_size=25, scaling_parameter=1000, downscale_factor=1 )  # Best in robolab.
+    cd = CameraDriver(list_of_markers_to_find, default_kernel_size=13, scaling_parameter=1000, downscale_factor=2 )  # Best in robolab.
     # cd = ImageDriver(list_of_markers_to_find, defaultKernelSize = 21) 
     t0 = time()
+
+    total_frames = 0
+    total_time = 0
 
     while cd.running:
         (t1, t0) = (t0, time())
         if print_iteration_time is True:
             print("time for one iteration: %f" % (t0 - t1))
+            total_time += (t0 - t1)
+            total_frames += 1
         cd.get_image()
+        if cd.current_frame is None:
+            print("No more frames to read from camera/video.")
+            break
         cd.process_frame()
         cd.draw_detected_markers()
         
         if check_keystroke is True:
-            key = cv2.waitKey(10000)
+            key = cv2.waitKey(1000000)
             if key == 27:  # Esc
                     cd.running = False
             # save frame when s is pressed
             if key == ord('s'):
                 cv2.imwrite(f"output/frame_{int(time())}.png", cd.current_frame)
-        """cd.show_processed_frame() 
-        cd.handle_keyboard_events()
-        y = cd.return_positions()
-        for k in range(len(y)):
-            try:
-                # pose_corrected = perspective_corrector.convertPose(y[k])
-                pose_corrected = y[k]
-                print("%8.3f %8.3f %8.3f %8.3f %s" % (pose_corrected.x,
-                                                        pose_corrected.y,
-                                                        pose_corrected.theta,
-                                                        pose_corrected.quality,
-                                                        pose_corrected.order))
-            except Exception as e:
-                print("%s" % e)"""
             
-
+    print("Average time per frame: %f" % (total_time / total_frames))
+    print("average fps: %f" % (total_frames / total_time))
     print("Stopping")
 
 main()
