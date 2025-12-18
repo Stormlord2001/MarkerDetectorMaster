@@ -18,7 +18,6 @@ if not cap.isOpened():
 
 while True:
     ret, frame = cap.read()
-    print("Frame shape:", frame.shape if ret else "No frame")
     if not ret:
         print("Frame lost")
         continue

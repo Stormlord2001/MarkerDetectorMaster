@@ -70,7 +70,7 @@ class CameraDriver:
         cv2.destroyAllWindows()
 
 def main():
-    cd = CameraDriver(camera_index=2, output_filename='output.avi', fps=60.0, frame_size=(640, 480))
+    cd = CameraDriver(camera_index=0, output_filename='output.avi', fps=60.0, frame_size=(640, 480))
 
     while cd.running:
         cd.get_image()
