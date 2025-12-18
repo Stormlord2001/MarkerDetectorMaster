@@ -179,7 +179,6 @@ class GimbalCommand:
 
     def center_gimbal(self):
         # CMD: 0x08  -> center
-        cmd = b'\x08'
         msg = b'\x55\x66\x01\x01\x00\x00\x00\x08\x01\xd1\x12'
         send(msg)
         response = receive()        
@@ -276,16 +275,20 @@ class GimbalCommand:
 # USAGE EXAMPLE
 # ----------------------------------------------------------
 
-gimbal = GimbalCommand()
+def main():
+    gimbal = GimbalCommand()
 
-print("Centering gimbal...")
-gimbal.center_gimbal()
-time.sleep(2)
+    print("Centering gimbal...")
+    gimbal.center_gimbal()
+    time.sleep(2)
 
 
-print("moving gimbal to yaw=30, pitch=0 using PID...")
-gimbal.move_PID(45, 135)
+    print("moving gimbal to yaw=30, pitch=0 using PID...")
+    gimbal.move_PID(45, 135)
 
-#print("moving gimbal to yaw=0, pitch=0 using Bang-Bang...")
-#gimbal.move_bangbang(90, 90)
+    #print("moving gimbal to yaw=0, pitch=0 using Bang-Bang...")
+    #gimbal.move_bangbang(90, 90)
+
+if __name__ == "__main__":
+    main()
 

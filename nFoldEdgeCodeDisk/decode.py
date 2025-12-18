@@ -2,7 +2,7 @@ import cv2
 import math
 import numpy as np
 
-from generate_marker_codes import getRingCodes, findSmallestRotation
+from nFoldEdgeCodeDisk.generate_marker_codes import getRingCodes, findSmallestRotation
 
 
 class decode_marker():

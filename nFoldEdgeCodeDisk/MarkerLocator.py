@@ -3,9 +3,9 @@ from time import time
 import cv2
 import numpy as np 
 
-from MarkerPose import MarkerPose
-from MarkerTracker import MarkerTracker
-from PoseEstimator import PoseEstimator
+from nFoldEdgeCodeDisk.MarkerPose import MarkerPose
+from nFoldEdgeCodeDisk.MarkerTracker import MarkerTracker
+from nFoldEdgeCodeDisk.PoseEstimator import PoseEstimator
 
 # parameters
 show_image = True
@@ -32,7 +32,7 @@ class CameraDriver:
     images to a different class.
     """
 
-    def __init__(self, marker_orders=[6], default_kernel_size=30, scaling_parameter=2500, downscale_factor=1):
+    def __init__(self, marker_orders=[6], default_kernel_size=30, scaling_parameter=2500, downscale_factor=1, VideoFile="output.avi"):
         # Initialize camera driver.
         # Open output window.
         if show_image is True:
@@ -43,7 +43,7 @@ class CameraDriver:
         #self.camera = cv2.VideoCapture("Videos/.mp4")
         #self.camera = cv2.VideoCapture("Videos/markersRotatingPulsing.mp4")
         #self.camera = cv2.VideoCapture("nFoldEdgeCodeDisk/output.avi")
-        self.camera = cv2.VideoCapture("output.avi")
+        self.camera = cv2.VideoCapture(VideoFile)
         #self.set_camera_resolution()
 
         # Storage for image processing.
@@ -137,4 +137,5 @@ def main():
     print("average fps: %f" % (total_frames / total_time))
     print("Stopping")
 
-main()
+if __name__ == "__main__":
+    main()

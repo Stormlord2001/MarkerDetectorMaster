@@ -2,8 +2,8 @@
 import cv2
 import numpy as np
 import math
-from MarkerPose import MarkerPose
-from decode import decode_marker
+from nFoldEdgeCodeDisk.MarkerPose import MarkerPose
+from nFoldEdgeCodeDisk.decode import decode_marker
 
 
 class MarkerTracker:
@@ -76,7 +76,8 @@ class MarkerTracker:
         thres_img = np.where(frame_sum_squared > threshold_value, frame_sum_squared, 0)
         min_val, max_val_thresh, min_loc, max_loc_thresh = cv2.minMaxLoc(thres_img)
        
-        cv2.imshow("frame_sum_squared_norm", 100*255*frame_sum_squared)
+        # This is the golden plot
+        ##########cv2.imshow("frame_sum_squared_norm", 100*255*frame_sum_squared)
         ##cv2.imshow("thres_img_norm", 255*thres_img/max_val_thresh)
 
         # extract contours
@@ -93,7 +94,7 @@ class MarkerTracker:
             print(f"Too many contours detected ({len(contours)}), skipping frame.")
             return []
 
-        print(f"length contours: {len(contours)}")
+        #print(f"length contours: {len(contours)}")
         for contour in contours:
             (x, y), radius = cv2.minEnclosingCircle(contour)
             if radius > 2:
@@ -106,7 +107,7 @@ class MarkerTracker:
             frame_sum_cutout = self.extract_window_around_marker_location(frame_sum_squared, (int(x), int(y)))
             min_val_c, max_val_c, min_loc_c, max_loc_c = cv2.minMaxLoc(frame_sum_cutout)
 
-            print(f"max_loc_c before refining: {max_loc_c}, x: {x}, y: {y}")
+            #print(f"max_loc_c before refining: {max_loc_c}, x: {x}, y: {y}")
             (dx, dy) = self.refine_marker_location_new(frame_sum_cutout, max_loc_c[1], max_loc_c[0])
             refined_location = (x-self.x1+max_loc_c[0] + dx, y-self.y1+max_loc_c[1] + dy)
 
@@ -123,7 +124,7 @@ class MarkerTracker:
             pose = MarkerPose(refined_location[0], refined_location[1], orientation, quality, self.order)
             pose.id = marker_id
             #if abs(refined_location[0]-self.x1) > 2 or abs(refined_location[1]-self.y1) > 2:
-            print(f"Detected pos: x: {x}, y: {y}, refined x: {refined_location[0]:.2f}, refined y: {refined_location[1]:.2f}, dx: {dx:.2f}, dy: {dy:.2f} fully refined x: {pose.x:.2f}, fully refined y: {pose.y:.2f}")
+            #print(f"Detected pos: x: {x}, y: {y}, refined x: {refined_location[0]:.2f}, refined y: {refined_location[1]:.2f}, dx: {dx:.2f}, dy: {dy:.2f} fully refined x: {pose.x:.2f}, fully refined y: {pose.y:.2f}")
             poses.append(pose)
 
         
