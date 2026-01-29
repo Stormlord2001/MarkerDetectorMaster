@@ -1,5 +1,6 @@
 import socket
 import time
+import math
 
 UDP_IP = "192.168.144.25"
 UDP_PORT = 37260
@@ -226,7 +227,10 @@ class GimbalCommand:
             yaw = toInt(data[2:4]+data[0:2]) / 10.
             pitch = toInt(data[6:8]+data[4:6]) / 10.
             roll = toInt(data[10:12]+data[8:10]) / 10.
-            print(f"Yaw: {yaw}, Pitch: {pitch}, Roll: {roll}")
+            yaw_speed = toInt(data[14:16]+data[12:14]) / 10.
+            pitch_speed = toInt(data[18:20]+data[16:18]) / 10.
+            roll_speed = toInt(data[22:24]+data[20:22]) / 10.
+            print(f"Yaw: {yaw}, Pitch: {pitch}, Roll: {roll}, Yaw Speed: {yaw_speed}, Pitch Speed: {pitch_speed}, Roll Speed: {roll_speed}")
             return yaw, pitch, roll
         return None
     
@@ -241,7 +245,7 @@ class GimbalCommand:
         # computes the error, applies the PID formula, and sends speed commands.
         desired_yaw_1 = desired_yaw
         desired_pitch_1 = desired_pitch
-        desired_yaw_2 = 0
+        desired_yaw_2 = -45
         desired_pitch_2 = 180
         i = 0
 
@@ -250,15 +254,19 @@ class GimbalCommand:
             yaw_error = current_yaw - desired_yaw
             pitch_error = desired_pitch - current_pitch
 
-            wrap_yaw = (yaw_error + 180) % 360 - 180
+            #wrap_yaw = (yaw_error + 180) % 360 - 180
+            wrap_yaw = math.atan2(math.sin(math.radians(yaw_error)), math.cos(math.radians(yaw_error))) * (180 / math.pi)
             yaw_error = wrap_yaw
-            wrap_pitch = (pitch_error + 180) % 360 - 180
+            #wrap_pitch = (pitch_error + 180) % 360 - 180
+            wrap_pitch = math.atan2(math.sin(math.radians(pitch_error)), math.cos(math.radians(pitch_error))) * (180 / math.pi)
             pitch_error = wrap_pitch
 
             yaw_speed = self.pid_yaw.update(yaw_error)
             pitch_speed = self.pid_pitch.update(pitch_error)
 
             self.move_speed(int(min(100, max(-100, yaw_speed))), int(min(100, max(-100, pitch_speed))))
+
+            #print(f"Yaw speed: {yaw_speed}, Pitch speed: {pitch_speed}")
 
             if abs(yaw_error) < 0.1 and abs(pitch_error) < 0.1:
                 print("Desired attitude reached")
@@ -277,14 +285,20 @@ class GimbalCommand:
 
 def main():
     gimbal = GimbalCommand()
+    gimbal.pid_yaw.kp = 10.0   # P, I, D values for yaw
+    gimbal.pid_yaw.ki = 0.0
+    gimbal.pid_yaw.kd = 1.0
+    gimbal.pid_pitch.kp = 10.0   # P, I, D values for pitch
+    gimbal.pid_pitch.ki = 0.0
+    gimbal.pid_pitch.kd = 1.0
 
     print("Centering gimbal...")
     gimbal.center_gimbal()
-    time.sleep(2)
+    time.sleep(3)
 
 
     print("moving gimbal to yaw=30, pitch=0 using PID...")
-    gimbal.move_PID(45, 135)
+    gimbal.move_PID(90, 135)
 
     #print("moving gimbal to yaw=0, pitch=0 using Bang-Bang...")
     #gimbal.move_bangbang(90, 90)

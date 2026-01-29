@@ -13,24 +13,24 @@ class CameraDriver:
         self.running = True
         self.frame_number = 0
 
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, frame_size[0])
-        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_size[1])
-        self.camera.set(cv2.CAP_PROP_FPS, fps)
+        #self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, frame_size[0])
+        #self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_size[1])
+        #self.camera.set(cv2.CAP_PROP_FPS, fps)
 
         # Disable auto exposure
-        self.camera.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
+        #self.camera.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
         
         # Fast shutter (requires lots of light!)
-        self.camera.set(cv2.CAP_PROP_EXPOSURE, -13)         # range: -1 .. -13 (lower = faster)
+        #self.camera.set(cv2.CAP_PROP_EXPOSURE, -13)         # range: -1 .. -13 (lower = faster)
 
         # Keep gain low for less noise
-        self.camera.set(cv2.CAP_PROP_GAIN, 0)
+        #self.camera.set(cv2.CAP_PROP_GAIN, 0)
 
         # Disable autofocus (C270 is fixed focus)
-        self.camera.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+        #self.camera.set(cv2.CAP_PROP_AUTOFOCUS, 0)
 
         # Optional: set focus (but C270 may ignore)
-        self.camera.set(cv2.CAP_PROP_FOCUS, 0)
+        #self.camera.set(cv2.CAP_PROP_FOCUS, 0)
 
         # Disable auto gain
         #self.camera.set(cv2.CAP_PROP_GAIN, 0)
@@ -70,7 +70,7 @@ class CameraDriver:
         cv2.destroyAllWindows()
 
 def main():
-    cd = CameraDriver(camera_index=0, output_filename='output.avi', fps=60.0, frame_size=(640, 480))
+    cd = CameraDriver(camera_index=1, output_filename='output.avi', fps=30.0, frame_size=(640, 480))
 
     while cd.running:
         cd.get_image()

@@ -4,10 +4,12 @@ import cv2
 url = "rtsp://192.168.144.25:8554/main.264"
 
 # Force FFMPEG backend
-cap = cv2.VideoCapture(
-    url,
-    cv2.CAP_FFMPEG
-)
+#cap = cv2.VideoCapture(
+#    url,
+#    cv2.CAP_FFMPEG
+#)
+
+cap = cv2.VideoCapture(1)  # Use webcam for testing
 
 # Reduce buffering
 cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # keep only the latest frame

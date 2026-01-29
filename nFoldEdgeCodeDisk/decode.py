@@ -2,8 +2,10 @@ import cv2
 import math
 import numpy as np
 
-from nFoldEdgeCodeDisk.generate_marker_codes import getRingCodes, findSmallestRotation
-
+try:
+    from nFoldEdgeCodeDisk.generate_marker_codes import getRingCodes, findSmallestRotation
+except ImportError:
+    from generate_marker_codes import getRingCodes, findSmallestRotation
 
 class decode_marker():
     def __init__(self, r_code_inner, r_code_outer, bits, transitions):

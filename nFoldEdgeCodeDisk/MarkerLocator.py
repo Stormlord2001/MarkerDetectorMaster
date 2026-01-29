@@ -3,9 +3,14 @@ from time import time
 import cv2
 import numpy as np 
 
-from nFoldEdgeCodeDisk.MarkerPose import MarkerPose
-from nFoldEdgeCodeDisk.MarkerTracker import MarkerTracker
-from nFoldEdgeCodeDisk.PoseEstimator import PoseEstimator
+try:
+    from MarkerPose import MarkerPose
+    from MarkerTracker import MarkerTracker
+    from PoseEstimator import PoseEstimator
+except ImportError:
+    from nFoldEdgeCodeDisk.MarkerPose import MarkerPose
+    from nFoldEdgeCodeDisk.MarkerTracker import MarkerTracker
+    from nFoldEdgeCodeDisk.PoseEstimator import PoseEstimator
 
 # parameters
 show_image = True
@@ -105,7 +110,7 @@ class CameraDriver:
 def main():
     # 3840x2160 video: default_kernel_size=73, scaling_parameter=1000, downscale_factor=1
 
-    cd = CameraDriver(list_of_markers_to_find, default_kernel_size=13, scaling_parameter=1000, downscale_factor=2 )  # Best in robolab.
+    cd = CameraDriver(list_of_markers_to_find, default_kernel_size=25, scaling_parameter=1000, downscale_factor=1 )  # Best in robolab.
     # cd = ImageDriver(list_of_markers_to_find, defaultKernelSize = 21) 
     t0 = time()
 

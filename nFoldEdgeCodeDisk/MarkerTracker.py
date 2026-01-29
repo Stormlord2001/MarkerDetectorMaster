@@ -2,9 +2,13 @@
 import cv2
 import numpy as np
 import math
-from nFoldEdgeCodeDisk.MarkerPose import MarkerPose
-from nFoldEdgeCodeDisk.decode import decode_marker
 
+try:
+    from nFoldEdgeCodeDisk.MarkerPose import MarkerPose
+    from nFoldEdgeCodeDisk.decode import decode_marker
+except ImportError:
+    from MarkerPose import MarkerPose
+    from decode import decode_marker
 
 class MarkerTracker:
     def __init__(self, order, kernel_size, scale_factor, downscale_factor=1):
@@ -78,7 +82,7 @@ class MarkerTracker:
        
         # This is the golden plot
         ##########cv2.imshow("frame_sum_squared_norm", 100*255*frame_sum_squared)
-        ##cv2.imshow("thres_img_norm", 255*thres_img/max_val_thresh)
+        cv2.imshow("thres_img_norm", 255*thres_img/max_val_thresh)
 
         # extract contours
         contours, hierarchy = cv2.findContours(np.uint8(thres_img/max_val_thresh*255), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
