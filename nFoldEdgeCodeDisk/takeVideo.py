@@ -18,13 +18,13 @@ class CameraDriver:
         #self.camera.set(cv2.CAP_PROP_FPS, fps)
 
         # Disable auto exposure
-        #self.camera.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
+        self.camera.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
         
         # Fast shutter (requires lots of light!)
-        #self.camera.set(cv2.CAP_PROP_EXPOSURE, -13)         # range: -1 .. -13 (lower = faster)
+        self.camera.set(cv2.CAP_PROP_EXPOSURE, -10)         # range: -1 .. -13 (lower = faster)
 
         # Keep gain low for less noise
-        #self.camera.set(cv2.CAP_PROP_GAIN, 0)
+        self.camera.set(cv2.CAP_PROP_GAIN, 150)
 
         # Disable autofocus (C270 is fixed focus)
         #self.camera.set(cv2.CAP_PROP_AUTOFOCUS, 0)

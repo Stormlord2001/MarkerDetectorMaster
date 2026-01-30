@@ -51,7 +51,7 @@ cx, cy = size // 2, size // 2
 
 # ===== Dataring =====
 r_outer_data = size//2
-r_inner_data = int(r_outer_data * 2/3)
+r_inner_data = int(r_outer_data * 1/2)
 
 # ===== N-fold edge marker =====
 r_outer_n_fold = int(r_outer_data * 1/2)

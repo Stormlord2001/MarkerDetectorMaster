@@ -28,17 +28,25 @@ class decode_marker():
         print(self.mask)
 
 
-    def extract_and_decode(self, bgr_image, center):
+    def extract_and_decode(self, image, center):
         #print("center: ", center)
-        #print(f"image shape: {bgr_image.shape}, center: {center}, r_code_outer: {self.r_code_outer}")
-        marker = bgr_image[int(center[1] - self.r_code_outer):int(center[1] + self.r_code_outer), 
+        #print(f"image shape: {image.shape}, center: {center}, r_code_outer: {self.r_code_outer}")
+
+        marker = image[int(center[1] - self.r_code_outer):int(center[1] + self.r_code_outer), 
                            int(center[0] - self.r_code_outer):int(center[0] + self.r_code_outer)]
+        
+
         #print("extracted marker shape:", marker.shape)
         if len(marker.shape) > 2:
             marker_gray = cv2.cvtColor(marker, cv2.COLOR_BGR2GRAY)
             _, marker_bin = cv2.threshold(marker_gray, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         else:
             _, marker_bin = cv2.threshold(marker, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        
+        if marker_bin is None:
+            # Sometimes thresholding fails
+            return None
+
 
         samples = []
         for i in range(6):
@@ -47,13 +55,18 @@ class decode_marker():
                 theta = 2 * math.pi * j / (self.bits) + (math.pi/36)*i
                 sample_x = int(self.r_code_outer + self.r_code * math.cos(theta))
                 sample_y = int(self.r_code_outer + self.r_code * math.sin(theta))
-                sample.append(self.circle_vote(marker_bin, sample_x, sample_y))
-                cv2.circle(bgr_image, (sample_x+center[0]-self.r_code_outer, sample_y+center[1]-self.r_code_outer), self.r_voting, (0,0,255), -1)
+                result = self.circle_vote(marker_bin, sample_x, sample_y)
+                if result is None:
+                    print("circle_vote returned None")
+                    return None
+                sample.append(result)
+                cv2.circle(image, (sample_x+center[0]-self.r_code_outer, sample_y+center[1]-self.r_code_outer), self.r_voting, (0,0,255), -1)
 
             sample = self.list_to_binary(sample)
             min_sample = findSmallestRotation(sample, self.bits)
             #print(min_sample)
             samples.append(min_sample)
+
         #cv2.imshow("marker", marker / marker.max())
         #cv2.waitKey(0)
         voted_marker_id = max(set(samples), key=samples.count)
@@ -62,7 +75,7 @@ class decode_marker():
 
             if voted_marker_id in self.ring_codes:
                 # Plot the circle around the marker
-                cv2.circle(bgr_image, (center[0], center[1]), self.r_code_outer, (0,255,0), 2)
+                cv2.circle(image, (center[0], center[1]), self.r_code_outer, (0,255,0), 2)
                 return voted_marker_id
             else:
                 print("marker id not found in ring codes")
@@ -89,9 +102,13 @@ class decode_marker():
         x1, x2 = cx - self.r_voting, cx + self.r_voting + 1
         y1, y2 = cy - self.r_voting, cy + self.r_voting + 1
         roi = img[x1:x2, y1:y2]
+        #print(f"ROI shape: {roi.shape}, expected shape: {self.mask.shape}, img shape: {img.shape}, cx: {cx}, cy: {cy}, x1: {x1}, x2: {x2}, y1: {y1}, y2: {y2}")
 
         # binary decision for black/white region
         # print(roi.shape)
+        if roi.shape != self.mask.shape:
+            print("ROI shape does not match mask shape")
+            return None  # default to black if out of bounds
         black_votes = (roi[self.mask] == 0).sum()
         white_votes = (roi[self.mask] != 0).sum()
 

@@ -1,4 +1,3 @@
-
 import cv2
 import numpy as np
 import math
@@ -40,8 +39,8 @@ class MarkerTracker:
         self.pose = None
 
         # Using codering to id markers
-        r_code_inner = int(21/downscale_factor)
-        self.r_code_outer = int(32/downscale_factor)
+        r_code_inner = int(21/downscale_factor) #int(21/downscale_factor) 14
+        self.r_code_outer = int(32/downscale_factor) #int(32/downscale_factor) 20
         bits = 8
         transitions = 2
         self.decoder = decode_marker(r_code_inner, self.r_code_outer, bits, transitions)
@@ -113,20 +112,32 @@ class MarkerTracker:
 
             #print(f"max_loc_c before refining: {max_loc_c}, x: {x}, y: {y}")
             (dx, dy) = self.refine_marker_location_new(frame_sum_cutout, max_loc_c[1], max_loc_c[0])
+            if abs(dx) > 1.0 or abs(dy) > 1.0:
+                print(f"Refinement too large: dx: {dx}, dy: {dy}, skipping marker.")
+                continue
             refined_location = (x-self.x1+max_loc_c[0] + dx, y-self.y1+max_loc_c[1] + dy)
 
+            if refined_location[0] - self.r_code_outer < 0 or refined_location[0] + self.r_code_outer + 1 >= frame.shape[1]:
+                print("Refined location out of bounds in x-direction, skipping marker.")
+                continue
+            if refined_location[1] - self.r_code_outer < 0 or refined_location[1] + self.r_code_outer + 1 >= frame.shape[0]:
+                print("Refined location out of bounds in y-direction, skipping marker.")
+                continue
+
             # Decode the marker ID
-            #marker_id = self.decoder.extract_and_decode(frame, (int(refined_location[0]), int(refined_location[1])))
+            #print(f"Refining at: {x-self.x1+max_loc_c[0]}, {y-self.y1+max_loc_c[1]} Refined location: {refined_location}, with delta: ({dx}, {dy})")
+            #print(f"interval: {x - self.r_code_outer} to {x + self.r_code_outer + 1}, {y - self.r_code_outer} to {y + self.r_code_outer + 1}")
             marker_id = self.decoder.extract_and_decode(frame, (int(refined_location[0]), int(refined_location[1])))
             
             if marker_id is None:
                 continue
 
-            orientation = 0 #self.determine_marker_orientation(frame, frame_real, frame_imag, max_loc_c)
-            quality = 0 #self.determine_marker_quality(frame, orientation, max_loc_c)
+            #orientation = 0 #self.determine_marker_orientation(frame, frame_real, frame_imag, max_loc_c)
+            #quality = 0 #self.determine_marker_quality(frame, orientation, max_loc_c)
             #pose = MarkerPose(x, y, orientation, quality, self.order)
-            pose = MarkerPose(refined_location[0], refined_location[1], orientation, quality, self.order)
-            pose.id = marker_id
+            #pose = MarkerPose(refined_location[0], refined_location[1], orientation, quality, self.order)
+            #pose.id = marker_id
+            pose = MarkerPose(refined_location[0], refined_location[1], marker_id)
             #if abs(refined_location[0]-self.x1) > 2 or abs(refined_location[1]-self.y1) > 2:
             #print(f"Detected pos: x: {x}, y: {y}, refined x: {refined_location[0]:.2f}, refined y: {refined_location[1]:.2f}, dx: {dx:.2f}, dy: {dy:.2f} fully refined x: {pose.x:.2f}, fully refined y: {pose.y:.2f}")
             poses.append(pose)

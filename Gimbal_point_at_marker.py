@@ -34,6 +34,15 @@ cap = cv2.VideoCapture(1)  # Use webcam for testing
 # Reduce buffering
 cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # keep only the latest frame
 
+# Disable auto exposure
+cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
+
+# Fast shutter (requires lots of light!)
+cap.set(cv2.CAP_PROP_EXPOSURE, -10)         # range: -1 .. -13 (lower = faster)
+
+# Keep gain low for less noise
+cap.set(cv2.CAP_PROP_GAIN, 150)
+
 if not cap.isOpened():
     print("Could not open video stream")
     exit()
@@ -44,7 +53,7 @@ intrinsics = np.array([[835.4362078622368, 0, 323.0605420101571],
                           [0, 0, 1]], dtype=float)
 dist_coeffs = np.array([-0.0999921394506428, 2.185188066835036, -0.005726667745540125, 0.00027787706601120816, -7.636164458366145], dtype=float)
 
-cd = ml.CameraDriver([5], default_kernel_size=25, scaling_parameter=1000, downscale_factor=1)  # Best in robolab.
+cd = ml.CameraDriver([5], default_kernel_size=13, scaling_parameter=1000, downscale_factor=2)  # Best in robolab.
 
 
 

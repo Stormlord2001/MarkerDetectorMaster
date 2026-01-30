@@ -213,10 +213,7 @@ class GimbalCommand:
         send(cmd)
         response = receive()
         if response and response[2] == '0d':
-            # Response usually: 55 66 01 0d 04 ... Yaw Low High Pitch Low High Roll Low High CRC
-            # Adjust parsing based on actual gimbal SDK docs
             data = response[0]
-
             # FROMsiyi ros SDK 623:
             #self._att_msg.yaw = toInt(msg[2:4]+msg[0:2]) /10.
             #self._att_msg.pitch = toInt(msg[6:8]+msg[4:6]) /10.
@@ -230,7 +227,7 @@ class GimbalCommand:
             yaw_speed = toInt(data[14:16]+data[12:14]) / 10.
             pitch_speed = toInt(data[18:20]+data[16:18]) / 10.
             roll_speed = toInt(data[22:24]+data[20:22]) / 10.
-            print(f"Yaw: {yaw}, Pitch: {pitch}, Roll: {roll}, Yaw Speed: {yaw_speed}, Pitch Speed: {pitch_speed}, Roll Speed: {roll_speed}")
+            print(f"Yaw: {yaw: 6.1f}, Pitch: {pitch: 6.1f}, Roll: {roll: 6.1f}, Yaw Speed: {yaw_speed: 6.1f}, Pitch Speed: {pitch_speed: 6.1f}, Roll Speed: {roll_speed: 6.1f}")
             return yaw, pitch, roll
         return None
     
@@ -240,12 +237,10 @@ class GimbalCommand:
         desired_yaw:   Target yaw angle
         desired_pitch: Target pitch angle
         """
-        # This is a placeholder for actual PID control implementation.
-        # You would need to implement a loop that continuously reads the current attitude,
-        # computes the error, applies the PID formula, and sends speed commands.
+        
         desired_yaw_1 = desired_yaw
         desired_pitch_1 = desired_pitch
-        desired_yaw_2 = -45
+        desired_yaw_2 = 0
         desired_pitch_2 = 180
         i = 0
 
@@ -254,21 +249,18 @@ class GimbalCommand:
             yaw_error = current_yaw - desired_yaw
             pitch_error = desired_pitch - current_pitch
 
-            #wrap_yaw = (yaw_error + 180) % 360 - 180
-            wrap_yaw = math.atan2(math.sin(math.radians(yaw_error)), math.cos(math.radians(yaw_error))) * (180 / math.pi)
-            yaw_error = wrap_yaw
-            #wrap_pitch = (pitch_error + 180) % 360 - 180
-            wrap_pitch = math.atan2(math.sin(math.radians(pitch_error)), math.cos(math.radians(pitch_error))) * (180 / math.pi)
-            pitch_error = wrap_pitch
 
-            yaw_speed = self.pid_yaw.update(yaw_error)
-            pitch_speed = self.pid_pitch.update(pitch_error)
+            wrap_yaw = math.atan2(math.sin(math.radians(yaw_error)), math.cos(math.radians(yaw_error))) * (180 / math.pi)
+            wrap_pitch = math.atan2(math.sin(math.radians(pitch_error)), math.cos(math.radians(pitch_error))) * (180 / math.pi)
+
+            yaw_speed = self.pid_yaw.update(wrap_yaw)
+            pitch_speed = self.pid_pitch.update(wrap_pitch)
 
             self.move_speed(int(min(100, max(-100, yaw_speed))), int(min(100, max(-100, pitch_speed))))
 
             #print(f"Yaw speed: {yaw_speed}, Pitch speed: {pitch_speed}")
 
-            if abs(yaw_error) < 0.1 and abs(pitch_error) < 0.1:
+            if abs(wrap_yaw) < 0.1 and abs(wrap_pitch) < 0.1:
                 print("Desired attitude reached")
                 if i%2==0:
                     desired_yaw, desired_pitch = desired_yaw_2, desired_pitch_2

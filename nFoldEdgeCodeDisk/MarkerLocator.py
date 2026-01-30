@@ -65,7 +65,7 @@ class CameraDriver:
         for marker_order in marker_orders:
             temp = MarkerTracker(marker_order, default_kernel_size, scaling_parameter, downscale_factor)
             self.trackers.append(temp)
-            self.old_locations.append(MarkerPose(None, None, None, None, None))
+            self.old_locations.append(MarkerPose(None, None, None))
 
     def set_camera_resolution(self):
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
