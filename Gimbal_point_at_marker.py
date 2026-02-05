@@ -8,8 +8,10 @@ import numpy as np
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
 
 use_gimbal = True
+
+gimbal = GimbalCommand()
 if use_gimbal:
-    gimbal = GimbalCommand()
+    
     gimbal.center_gimbal()
     time.sleep(2)
 
@@ -38,10 +40,10 @@ cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # keep only the latest frame
 cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
 
 # Fast shutter (requires lots of light!)
-cap.set(cv2.CAP_PROP_EXPOSURE, -10)         # range: -1 .. -13 (lower = faster)
+cap.set(cv2.CAP_PROP_EXPOSURE, -8)         # range: -1 .. -13 (lower = faster)
 
 # Keep gain low for less noise
-cap.set(cv2.CAP_PROP_GAIN, 150)
+cap.set(cv2.CAP_PROP_GAIN, 100)
 
 if not cap.isOpened():
     print("Could not open video stream")
@@ -55,6 +57,7 @@ dist_coeffs = np.array([-0.0999921394506428, 2.185188066835036, -0.0057266677455
 
 cd = ml.CameraDriver([5], default_kernel_size=13, scaling_parameter=1000, downscale_factor=2)  # Best in robolab.
 
+lp = ml.LoadPosition(intrinsics, dist_coeffs, downscale_factor=2)
 
 
 while True:
@@ -65,9 +68,58 @@ while True:
 
     cd.current_frame = frame
     cd.process_frame()
+    
+    
+    if cd.locations:
+        test = lp.estimate_load_pose(cd.locations)
+        #print("Estimated load position (x, y, z, roll, pitch, yaw): ", lp.load_position)
+        lp.PE.display_pose(cd.current_frame, axis_length=0.05)
+    
+        if test is not None:
+
+            tvec = test[1].ravel()
+            # calc roll and pitch from tvec
+            x, y, z = tvec[0], tvec[1], tvec[2] # in camera frame to payload frame
+            pitch = math.atan2(y, z) * (180 / math.pi) # pitch in gimbal, roll in camera frame
+            yaw = -math.atan2(x, z) * (180 / math.pi) # yaw in gimbal, -pitch in camera frame
+
+
+            print(f'pitch: {pitch: 6.2f}, yaw: {yaw: 6.2f}')
+        
+            if use_gimbal:
+                current_yaw, current_pitch, _ = gimbal.get_attitude()
+            else:
+                current_yaw, current_pitch = 10, 0
+            yaw_error = yaw
+            pitch_error = pitch
+
+
+            wrap_yaw = math.atan2(math.sin(math.radians(yaw_error)), math.cos(math.radians(yaw_error))) * (180 / math.pi)
+            wrap_pitch = math.atan2(math.sin(math.radians(pitch_error)), math.cos(math.radians(pitch_error))) * (180 / math.pi)
+
+            #print(f'yaw pixel, {error_yaw:.2f},  desired {yaw:.2f}, current {current_yaw:.2f}, error {yaw_error:.2f}, wrap {wrap_yaw:.2f}')
+            #print(f'pitch pixel, {error_pitch:.2f},  desired {pitch_desired:.2f}, current {current_pitch:.2f}, error {pitch_error:.2f}, wrap {wrap_pitch:.2f}')
+
+            yaw_speed = gimbal.pid_yaw.update(wrap_yaw)
+            pitch_speed = gimbal.pid_pitch.update(wrap_pitch)
+            #print(f"Yaw speed: {yaw_speed}, Pitch speed: {pitch_speed}")
+            if use_gimbal:
+                #gimbal.move_speed(int(min(100, max(-100, yaw_speed))), 0)
+                #gimbal.move_speed(0, int(min(100, max(-100, pitch_speed))))
+                gimbal.move_speed(int(min(100, max(-100, yaw_speed))), int(min(100, max(-100, pitch_speed))))
+                
+        else:
+            if use_gimbal:
+                gimbal.move_speed(0, 0)
+    else:
+        if use_gimbal:
+            gimbal.move_speed(0, 0)
+        print("No marker detected")
+
+    
     cd.draw_detected_markers()
 
-    if cd.locations:
+    """if cd.locations:
         marker = cd.locations[0]  # Take the first detected marker
         #print(f"Marker ID: {marker.id}, Position: ({marker.x}, {marker.y}), Angle: {marker.theta}")
         image_center_x = frame.shape[1]/2
@@ -112,7 +164,7 @@ while True:
     else:
         if use_gimbal:
             gimbal.move_speed(0, 0)
-        print("No marker detected")
+        print("No marker detected")"""
 
     #cv2.imshow("A8 Mini Low Latency", frame)
     if cv2.waitKey(1) == 27:  # ESC to exit

@@ -39,8 +39,8 @@ class MarkerTracker:
         self.pose = None
 
         # Using codering to id markers
-        r_code_inner = int(21/downscale_factor) #int(21/downscale_factor) 14
-        self.r_code_outer = int(32/downscale_factor) #int(32/downscale_factor) 20
+        r_code_inner = int(14/downscale_factor) #int(21/downscale_factor) 14
+        self.r_code_outer = int(20/downscale_factor) #int(32/downscale_factor) 20
         bits = 8
         transitions = 2
         self.decoder = decode_marker(r_code_inner, self.r_code_outer, bits, transitions)
@@ -74,13 +74,13 @@ class MarkerTracker:
         
         ###cv2.imshow("frame", frame)
 
-        threshold_value = max_val * 0.5
+        threshold_value = max_val * 0.25 #0.5
 
         thres_img = np.where(frame_sum_squared > threshold_value, frame_sum_squared, 0)
         min_val, max_val_thresh, min_loc, max_loc_thresh = cv2.minMaxLoc(thres_img)
        
         # This is the golden plot
-        ##########cv2.imshow("frame_sum_squared_norm", 100*255*frame_sum_squared)
+        cv2.imshow("frame_sum_squared_norm", 100*255*frame_sum_squared)
         cv2.imshow("thres_img_norm", 255*thres_img/max_val_thresh)
 
         # extract contours
@@ -100,8 +100,8 @@ class MarkerTracker:
         #print(f"length contours: {len(contours)}")
         for contour in contours:
             (x, y), radius = cv2.minEnclosingCircle(contour)
-            if radius > 2:
-                continue
+            #if radius > 2:
+            #    continue
             if x - self.r_code_outer < 0 or x + self.r_code_outer + 1 >= frame.shape[1]:
                 continue
             if y - self.r_code_outer < 0 or y + self.r_code_outer + 1 >= frame.shape[0]:

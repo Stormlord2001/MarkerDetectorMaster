@@ -20,7 +20,7 @@ class decode_marker():
         print("Generated ring codes:", self.ring_codes)
 
 
-        self.r_voting = 2 # 0 will mean a single pixel, and 1 is a circle with diameter 3
+        self.r_voting = 0 # 0 will mean a single pixel, and 1 is a circle with diameter 3
         # precompute mask for a given radius
         y, x = np.ogrid[-self.r_voting:self.r_voting+1, -self.r_voting:self.r_voting+1]
         self.mask = x*x + y*y <= self.r_voting*self.r_voting
@@ -32,8 +32,8 @@ class decode_marker():
         #print("center: ", center)
         #print(f"image shape: {image.shape}, center: {center}, r_code_outer: {self.r_code_outer}")
 
-        marker = image[int(center[1] - self.r_code_outer):int(center[1] + self.r_code_outer), 
-                           int(center[0] - self.r_code_outer):int(center[0] + self.r_code_outer)]
+        marker = image[int(center[1] - self.r_code_outer):int(center[1] + self.r_code_outer + 1), 
+                           int(center[0] - self.r_code_outer):int(center[0] + self.r_code_outer + 1)]
         
 
         #print("extracted marker shape:", marker.shape)
@@ -53,8 +53,8 @@ class decode_marker():
             sample = []
             for j in range(self.bits):
                 theta = 2 * math.pi * j / (self.bits) + (math.pi/36)*i
-                sample_x = int(self.r_code_outer + self.r_code * math.cos(theta))
-                sample_y = int(self.r_code_outer + self.r_code * math.sin(theta))
+                sample_x = self.r_code_outer + int(self.r_code * math.cos(theta))
+                sample_y = self.r_code_outer + int(self.r_code * math.sin(theta))
                 result = self.circle_vote(marker_bin, sample_x, sample_y)
                 if result is None:
                     print("circle_vote returned None")
@@ -70,23 +70,70 @@ class decode_marker():
         #cv2.imshow("marker", marker / marker.max())
         #cv2.waitKey(0)
         voted_marker_id = max(set(samples), key=samples.count)
-        if samples.count(voted_marker_id) > (len(samples)*1/2):
+
+        ring_code_count = {}
+        for code in self.ring_codes:
+            ring_code_count.update({code:samples.count(code)})
+        voted_marker_id = max(ring_code_count, key=ring_code_count.get)
+
+        if ring_code_count[voted_marker_id] >= 2:
+            cv2.imshow("marker", cv2.resize(marker, (0,0), fx=10.0, fy=10.0))
+            cv2.imshow("marker_bin", cv2.resize(marker_bin * 255, (0,0), fx=10.0, fy=10.0))
+            cv2.circle(image, (center[0], center[1]), self.r_code_outer, (0,255,0), 2)
+            return voted_marker_id
+        else:
+            #print("marker id not found in ring codes: ", voted_marker_id, samples, ring_code_count)
+            cv2.imshow("marker", cv2.resize(marker, (0,0), fx=10.0, fy=10.0))
+            cv2.imshow("marker_bin", cv2.resize(marker_bin * 255, (0,0), fx=10.0, fy=10.0))
+            #print("samples:", samples)
+            return None
+
+        
+        
+        if voted_marker_id in self.ring_codes:
+            # Plot the circle around the marker
+            if voted_marker_id == 39:
+                scaled = cv2.resize(marker, (0,0), fx=10.0, fy=10.0)
+                cv2.imshow("marker", scaled)
+                cv2.imshow("marker_bin", cv2.resize(marker_bin * 255, (0,0), fx=10.0, fy=10.0))
+                #print("samples:", samples)
+            cv2.circle(image, (center[0], center[1]), self.r_code_outer, (0,255,0), 2)
+            return voted_marker_id
+        else:
+            
+            print("marker id not found in ring codes: ", voted_marker_id, samples, ring_code_count)
+            if voted_marker_id == 39 and ring_code_count[voted_marker_id] >= 2:
+                scaled = cv2.resize(marker, (0,0), fx=10.0, fy=10.0)
+                cv2.imshow("marker", scaled)
+                cv2.imshow("marker_bin", cv2.resize(marker_bin * 255, (0,0), fx=10.0, fy=10.0))
+                print("samples:", samples)
+                #cv2.waitKey(0)
+            return None
+        """if samples.count(voted_marker_id) > (len(samples)*1/2):
             #print("marker is good")
 
             if voted_marker_id in self.ring_codes:
                 # Plot the circle around the marker
+                if voted_marker_id == 119:
+                    scaled = cv2.resize(marker, (0,0), fx=10.0, fy=10.0)
+                    cv2.imshow("marker", scaled)
+                    cv2.imshow("marker_bin", cv2.resize(marker_bin * 255, (0,0), fx=10.0, fy=10.0))
+                    print("samples:", samples)
                 cv2.circle(image, (center[0], center[1]), self.r_code_outer, (0,255,0), 2)
                 return voted_marker_id
             else:
                 print("marker id not found in ring codes")
                 return None
         else:
-            print("marker is bad")
-            #scaled = cv2.resize(marker, (0,0), fx=10.0, fy=10.0)
-            #cv2.imshow("marker", scaled)
-            #cv2.waitKey(0)
-            print("samples:", samples)
-            return None
+            #print("marker is bad")
+            if voted_marker_id == 119:
+                scaled = cv2.resize(marker, (0,0), fx=10.0, fy=10.0)
+                cv2.imshow("marker", scaled)
+                cv2.imshow("marker_bin", cv2.resize(marker_bin * 255, (0,0), fx=10.0, fy=10.0))
+                print("samples:", samples)
+                cv2.waitKey(0)
+                
+            return None"""
 
     def list_to_binary(self, list):
         bits = [int(b) for b in list]
@@ -108,6 +155,9 @@ class decode_marker():
         # print(roi.shape)
         if roi.shape != self.mask.shape:
             print("ROI shape does not match mask shape")
+            print(f"ROI shape: {roi.shape}, mask shape: {self.mask.shape}, img shape: {img.shape}, cx: {cx}, cy: {cy}, x1: {x1}, x2: {x2}, y1: {y1}, y2: {y2}")
+            cv2.imshow("img", cv2.resize(img * 255, (0,0), fx=10.0, fy=10.0))
+            cv2.waitKey(0)
             return None  # default to black if out of bounds
         black_votes = (roi[self.mask] == 0).sum()
         white_votes = (roi[self.mask] != 0).sum()

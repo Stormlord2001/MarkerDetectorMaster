@@ -227,7 +227,7 @@ class GimbalCommand:
             yaw_speed = toInt(data[14:16]+data[12:14]) / 10.
             pitch_speed = toInt(data[18:20]+data[16:18]) / 10.
             roll_speed = toInt(data[22:24]+data[20:22]) / 10.
-            print(f"Yaw: {yaw: 6.1f}, Pitch: {pitch: 6.1f}, Roll: {roll: 6.1f}, Yaw Speed: {yaw_speed: 6.1f}, Pitch Speed: {pitch_speed: 6.1f}, Roll Speed: {roll_speed: 6.1f}")
+            #print(f"Yaw: {yaw: 6.1f}, Pitch: {pitch: 6.1f}, Roll: {roll: 6.1f}, Yaw Speed: {yaw_speed: 6.1f}, Pitch Speed: {pitch_speed: 6.1f}, Roll Speed: {roll_speed: 6.1f}")
             return yaw, pitch, roll
         return None
     

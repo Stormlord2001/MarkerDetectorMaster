@@ -29,6 +29,48 @@ camera_matrix = np.array([[6195.77376865, 0, 4078.14040656],
 #dist_coeffs = np.zeros(5)  # or the real distortion values
 dist_coeffs = np.array([-0.0550747, -0.05581563, -0.00113507, 0.0002599, 0.10360782], dtype=float)
 
+class LoadPosition:
+    def __init__(self, camera_matrix, dist_coeffs, downscale_factor=1.0):
+        self.downscale_factor = downscale_factor
+        self.PE = PoseEstimator(camera_matrix, dist_coeffs, alpha=0.5, max_reproj_error=10.0, downscale_factor=downscale_factor)
+        
+        self.marker_ids = [17, 27, 39, 119]
+        self.marker_placements = {self.marker_ids[0]: (-0.495, -0.495, 0.0),
+                                  self.marker_ids[1]: (0.495, -0.495, 0.0),
+                                  self.marker_ids[2]: (0.495, 0.495, 0.0),
+                                  self.marker_ids[3]: (-0.495, 0.495, 0.0)}
+        self.marker_detections = {}
+
+    def estimate_load_pose(self, locations):
+        marker_positions = {}
+        marker_seen = {i: False for i in self.marker_ids}
+
+        for pose in locations:
+            # update marker seen status
+            if pose.id in self.marker_ids:
+                marker_seen[pose.id] = True
+                marker_positions.update({pose.id: pose})
+     
+        self.marker_detections = {id: (marker_positions[id].x*self.downscale_factor, marker_positions[id].y*self.downscale_factor) for id in self.marker_ids if marker_seen[id] is True}
+
+        if print_debug_messages is True:
+            print(f"Marker detections for pose estimation: {len(self.marker_detections)} markers")
+            print(self.marker_detections)
+
+        if len(self.marker_detections) >= 3:
+            rvec, tvec, R, cam_pos, inliers = self.PE.estimate_pose(
+                self.marker_placements,
+                self.marker_detections
+            )
+            if print_debug_messages is True:
+                print("Estimated pose:")
+                print("rvec:", rvec.ravel())
+                print("tvec:", tvec.ravel())
+                print("camera pos (object frame):", cam_pos.ravel())
+            return rvec, tvec, R, cam_pos
+        else:
+            return None
+
 
 
 class CameraDriver:
