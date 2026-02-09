@@ -1,77 +1,16 @@
 from time import time
-
 import cv2
-import numpy as np 
 
 try:
-    from MarkerPose import MarkerPose
     from MarkerTracker import MarkerTracker
-    from PoseEstimator import PoseEstimator
 except ImportError:
-    from nFoldEdgeCodeDisk.MarkerPose import MarkerPose
     from nFoldEdgeCodeDisk.MarkerTracker import MarkerTracker
-    from nFoldEdgeCodeDisk.PoseEstimator import PoseEstimator
 
 # parameters
 show_image = True
-print_debug_messages = False
 print_iteration_time = True
 check_keystroke = True
 list_of_markers_to_find = [5]
-grayscale_with_mahalanobis = False
-grayscale_with_hsv = False
-color = "magenta"  # only used if grayscale_with_hsv is True
-
-# camera intrinsics (fx, fy, cx, cy) and distortion
-camera_matrix = np.array([[6195.77376865, 0, 4078.14040656],
-                          [0, 6192.15216282, 2997.84935944],
-                          [0, 0, 1]], dtype=float)
-#dist_coeffs = np.zeros(5)  # or the real distortion values
-dist_coeffs = np.array([-0.0550747, -0.05581563, -0.00113507, 0.0002599, 0.10360782], dtype=float)
-
-class LoadPosition:
-    def __init__(self, camera_matrix, dist_coeffs, downscale_factor=1.0):
-        self.downscale_factor = downscale_factor
-        self.PE = PoseEstimator(camera_matrix, dist_coeffs, alpha=0.5, max_reproj_error=10.0, downscale_factor=downscale_factor)
-        
-        self.marker_ids = [17, 27, 39, 119]
-        self.marker_placements = {self.marker_ids[0]: (-0.495, -0.495, 0.0),
-                                  self.marker_ids[1]: (0.495, -0.495, 0.0),
-                                  self.marker_ids[2]: (0.495, 0.495, 0.0),
-                                  self.marker_ids[3]: (-0.495, 0.495, 0.0)}
-        self.marker_detections = {}
-
-    def estimate_load_pose(self, locations):
-        marker_positions = {}
-        marker_seen = {i: False for i in self.marker_ids}
-
-        for pose in locations:
-            # update marker seen status
-            if pose.id in self.marker_ids:
-                marker_seen[pose.id] = True
-                marker_positions.update({pose.id: pose})
-     
-        self.marker_detections = {id: (marker_positions[id].x*self.downscale_factor, marker_positions[id].y*self.downscale_factor) for id in self.marker_ids if marker_seen[id] is True}
-
-        if print_debug_messages is True:
-            print(f"Marker detections for pose estimation: {len(self.marker_detections)} markers")
-            print(self.marker_detections)
-
-        if len(self.marker_detections) >= 3:
-            rvec, tvec, R, cam_pos, inliers = self.PE.estimate_pose(
-                self.marker_placements,
-                self.marker_detections
-            )
-            if print_debug_messages is True:
-                print("Estimated pose:")
-                print("rvec:", rvec.ravel())
-                print("tvec:", tvec.ravel())
-                print("camera pos (object frame):", cam_pos.ravel())
-            return rvec, tvec, R, cam_pos
-        else:
-            return None
-
-
 
 class CameraDriver:
     """
@@ -79,7 +18,7 @@ class CameraDriver:
     images to a different class.
     """
 
-    def __init__(self, marker_orders=[6], default_kernel_size=30, scaling_parameter=2500, downscale_factor=1, VideoFile="output.avi"):
+    def __init__(self, marker_orders=[6], marker_ids = [], default_kernel_size=30, scaling_parameter=2500, downscale_factor=1, VideoFile=1):
         # Initialize camera driver.
         # Open output window.
         if show_image is True:
@@ -87,6 +26,18 @@ class CameraDriver:
 
         # Select the camera where the images should be grabbed from.
         self.camera = cv2.VideoCapture(VideoFile)
+        # Reduce buffering
+        self.camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # keep only the latest frame
+        # Disable auto exposure
+        self.camera.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
+        # Fast shutter (requires lots of light!)
+        self.camera.set(cv2.CAP_PROP_EXPOSURE, -8)         # range: -1 .. -13 (lower = faster)
+        # Keep gain low for less noise
+        self.camera.set(cv2.CAP_PROP_GAIN, 200)
+        if not self.camera.isOpened():
+            print("Could not open video stream")
+            exit()
+
 
         # Storage for image processing.
         self.current_frame = None
@@ -99,7 +50,7 @@ class CameraDriver:
 
         # Initialize trackers.
         for marker_order in marker_orders:
-            temp = MarkerTracker(marker_order, default_kernel_size, scaling_parameter, downscale_factor)
+            temp = MarkerTracker(marker_order, default_kernel_size, scaling_parameter, marker_ids, downscale_factor)
             self.trackers.append(temp)
 
 
@@ -107,12 +58,12 @@ class CameraDriver:
         self.current_frame = self.camera.read()[1]
 
     def process_frame(self):
-
         # Convert to grayscale.
         frame_gray = cv2.cvtColor(self.current_frame, cv2.COLOR_BGR2GRAY)
 
         # Downscale image for faster processing.
         reduced_image = cv2.resize(frame_gray, (0, 0), fx=1.0/self.downscale_factor, fy=1.0 / self.downscale_factor)
+        print(f"reduced_image shape: {reduced_image.shape}")
         self.locations = []
         for k in range(len(self.trackers)):
             poses = self.trackers[k].locate_marker(reduced_image)
@@ -126,9 +77,6 @@ class CameraDriver:
                 x = int(pose.x * self.downscale_factor)
                 y = int(pose.y * self.downscale_factor)
                 cv2.circle(display_frame, (x, y), 10, (0, 255, 0), 2)
-                # might need to be 50, but think it is just the length of the line
-                #cv2.line(display_frame, (x, y), (int(x + 20 * math.cos(pose.theta)), int(y + 20 * math.sin(pose.theta))), (255, 0, 0), 2)
-                #cv2.putText(display_frame, f"{pose.quality:0.2f}", (x + 10, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
                 cv2.putText(display_frame, f"{pose.id}", (x + 10, y + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
             

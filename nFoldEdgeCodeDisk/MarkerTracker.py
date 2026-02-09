@@ -10,7 +10,7 @@ except ImportError:
     from decode import decode_marker
 
 class MarkerTracker:
-    def __init__(self, order, kernel_size, scale_factor, downscale_factor=1):
+    def __init__(self, order, kernel_size, scale_factor, marker_ids, downscale_factor=1):
         (kernel_real, kernel_imag) = self.generate_symmetry_detector_kernel(order, kernel_size)
 
         self.order = order
@@ -30,11 +30,11 @@ class MarkerTracker:
         self.x2 = int(math.ceil(float(kernel_size)/2))
 
         # Using codering to id markers
-        r_code_inner = int(14/downscale_factor) #int(21/downscale_factor) 14
-        self.r_code_outer = int(20/downscale_factor) #int(32/downscale_factor) 20
+        r_code_inner = int(math.floor(18/downscale_factor)) #int(21/downscale_factor) 14
+        self.r_code_outer = int(math.ceil(26/downscale_factor)) #int(32/downscale_factor) 20
         bits = 8
         transitions = 2
-        self.decoder = decode_marker(r_code_inner, self.r_code_outer, bits, transitions)
+        self.decoder = decode_marker(r_code_inner, self.r_code_outer, bits, transitions, marker_ids)
 
     @staticmethod
     def generate_symmetry_detector_kernel(order, kernel_size):
@@ -69,8 +69,8 @@ class MarkerTracker:
         min_val, max_val_thresh, min_loc, max_loc_thresh = cv2.minMaxLoc(thres_img)
        
         # This is the golden plots
-        cv2.imshow("frame_sum_squared_norm", 100*255*frame_sum_squared)
-        cv2.imshow("thres_img_norm", 255*thres_img/max_val_thresh)
+        ###cv2.imshow("frame_sum_squared_norm", 100*255*frame_sum_squared)
+        ###cv2.imshow("thres_img_norm", 255*thres_img/max_val_thresh)
 
         contours, hierarchy = cv2.findContours(np.uint8(thres_img/max_val_thresh*255), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 

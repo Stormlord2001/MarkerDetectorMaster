@@ -2,21 +2,46 @@ import cv2
 import numpy as np
 
 class PoseEstimator:
-    def __init__(self, camera_matrix, dist_coeffs, alpha=0.5, max_reproj_error=5.0, downscale_factor=1.0):
+    def __init__(self, camera_matrix, dist_coeffs, marker_ids, marker_placements, alpha=0.5, max_reproj_error=5.0, downscale_factor=1.0):
         """
         alpha: smoothing factor [0-1] (higher = smoother, slower to respond)
         max_reproj_error: max acceptable mean reprojection error in pixels
         """
         self.camera_matrix = camera_matrix
         self.dist_coeffs = dist_coeffs
+        self.marker_ids = marker_ids
+        self.marker_placements = marker_placements
+        
         self.alpha = alpha
         self.max_reproj_error = max_reproj_error
+        self.downscale_factor = downscale_factor
+
         self.prev_rvec = None
         self.prev_tvec = None
-
-        self.downscale_factor = downscale_factor
         self.rvec_visual = None
         self.tvec_visual = None
+
+    def estimate_load_pose(self, locations):
+        marker_positions = {}
+        marker_seen = {i: False for i in self.marker_ids}
+
+        for pose in locations:
+            # update marker seen status
+            if pose.id in self.marker_ids:
+                marker_seen[pose.id] = True
+                marker_positions.update({pose.id: pose})
+     
+        marker_detections = {id: (marker_positions[id].x*self.downscale_factor, marker_positions[id].y*self.downscale_factor) for id in self.marker_ids if marker_seen[id] is True}
+
+        if len(marker_detections) >= 3:
+            rvec, tvec, R, cam_pos, inliers = self.estimate_pose(
+                self.marker_placements,
+                marker_detections
+            )
+
+            return rvec, tvec, R, cam_pos
+        else:
+            return None
 
     def estimate_pose(self, object_points_by_id, detections):
         # --- 1. build correspondence lists ---
@@ -79,8 +104,8 @@ class PoseEstimator:
             if self.prev_rvec is not None:
                 return self.prev_rvec, self.prev_tvec, cv2.Rodrigues(self.prev_rvec)[0], \
                        -cv2.Rodrigues(self.prev_rvec)[0].T @ self.prev_tvec, inliers
-            else:
-                raise RuntimeError("No previous pose available to fallback")
+            #else:
+            #    raise RuntimeError("No previous pose available to fallback")
 
         # --- 5. smooth pose with previous frame ---
         if self.prev_rvec is not None:
@@ -115,3 +140,4 @@ class PoseEstimator:
         """
         if self.rvec_visual is not None and self.tvec_visual is not None:
             cv2.drawFrameAxes(image, self.camera_matrix, self.dist_coeffs, self.rvec_visual, self.tvec_visual, axis_length, 5)
+

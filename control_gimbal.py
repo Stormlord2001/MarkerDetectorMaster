@@ -172,9 +172,9 @@ class PIDController:
 # Gimbal Commands (SIYI SDK)
 # ----------------------------------------------------------
 class GimbalCommand:
-    def __init__(self):
-        self.PID_yaw = (10, 0.0, 1.0)   # P, I, D values for yaw
-        self.PID_pitch = (10, 0.0, 1.0) # P, I, D values for pitch
+    def __init__(self, PID_yaw=(10, 0.0, 1.0), PID_pitch=(10, 0.0, 1.0)):
+        self.PID_yaw = PID_yaw   # P, I, D values for yaw
+        self.PID_pitch = PID_pitch # P, I, D values for pitch
         self.pid_yaw = PIDController(*self.PID_yaw)
         self.pid_pitch = PIDController(*self.PID_pitch)
 

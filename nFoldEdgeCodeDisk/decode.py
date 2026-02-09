@@ -8,7 +8,7 @@ except ImportError:
     from generate_marker_codes import getRingCodes, findSmallestRotation
 
 class decode_marker():
-    def __init__(self, r_code_inner, r_code_outer, bits, transitions):
+    def __init__(self, r_code_inner, r_code_outer, bits, transitions, marker_ids):
         self.r_code_inner = r_code_inner
         self.r_code_outer = r_code_outer
         self.r_code = (r_code_inner + r_code_outer)/2
@@ -18,6 +18,7 @@ class decode_marker():
         print("Generating ring codes for bits:", bits, "transitions:", transitions)
         self.ring_codes = getRingCodes(bits, transitions)
         print("Generated ring codes:", self.ring_codes)
+        self.ring_codes = marker_ids
 
 
         self.r_voting = 0 # 0 will mean a single pixel, and 1 is a circle with diameter 3
@@ -76,15 +77,18 @@ class decode_marker():
             ring_code_count.update({code:samples.count(code)})
         voted_marker_id = max(ring_code_count, key=ring_code_count.get)
 
+        print_marker = False
         if ring_code_count[voted_marker_id] >= 2:
-            cv2.imshow("marker", cv2.resize(marker, (0,0), fx=10.0, fy=10.0))
-            cv2.imshow("marker_bin", cv2.resize(marker_bin * 255, (0,0), fx=10.0, fy=10.0))
-            cv2.circle(image, (center[0], center[1]), self.r_code_outer, (0,255,0), 2)
+            if print_marker:
+                cv2.imshow("marker", cv2.resize(marker, (0,0), fx=10.0, fy=10.0))
+                cv2.imshow("marker_bin", cv2.resize(marker_bin * 255, (0,0), fx=10.0, fy=10.0))
+            #cv2.circle(image, (center[0], center[1]), self.r_code_outer, (0,255,0), 2)
             return voted_marker_id
         else:
             #print("marker id not found in ring codes: ", voted_marker_id, samples, ring_code_count)
-            cv2.imshow("marker", cv2.resize(marker, (0,0), fx=10.0, fy=10.0))
-            cv2.imshow("marker_bin", cv2.resize(marker_bin * 255, (0,0), fx=10.0, fy=10.0))
+            if print_marker:
+                cv2.imshow("marker", cv2.resize(marker, (0,0), fx=10.0, fy=10.0))
+                cv2.imshow("marker_bin", cv2.resize(marker_bin * 255, (0,0), fx=10.0, fy=10.0))
             #print("samples:", samples)
             return None
 
