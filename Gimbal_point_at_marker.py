@@ -97,7 +97,7 @@ def main():
             print("No marker detected")
 
         
-        cd.draw_detected_markers()
+        #cd.draw_detected_markers()
 
         #cv2.imshow("A8 Mini Low Latency", frame)
         if cv2.waitKey(1) == 27:  # ESC to exit
