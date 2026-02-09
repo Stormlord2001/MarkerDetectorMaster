@@ -181,12 +181,16 @@ class GimbalCommand:
     def center_gimbal(self):
         # CMD: 0x08  -> center
         msg = b'\x55\x66\x01\x01\x00\x00\x00\x08\x01\xd1\x12'
-        send(msg)
-        response = receive()        
-        if response and response[2] == '08' and response[0] == '01':
-            print("Gimbal centered")
-            return True
-        return False
+        while True:
+            send(msg)
+            response = receive()        
+            if response and response[2] == '08' and response[0] == '01':
+                print("Gimbal centered")
+                return True
+            elif response and response[2] == '08' and response[0] == '00':
+                print("gimbal failed to center, retrying...")
+            time.sleep(0.5)
+            print("Gimbal centering failed")
 
     def move_speed(self, yaw_speed, pitch_speed):
         """
@@ -233,7 +237,7 @@ class GimbalCommand:
     
     def move_PID(self, desired_yaw, desired_pitch):
         """
-        Move gimbal to desired yaw and pitch using PID control.
+        Move gimbal to desired yaw and pitch using PID control. Only implemented for testing the pid controller.
         desired_yaw:   Target yaw angle
         desired_pitch: Target pitch angle
         """
@@ -287,7 +291,6 @@ def main():
     print("Centering gimbal...")
     gimbal.center_gimbal()
     time.sleep(3)
-
 
     print("moving gimbal to yaw=30, pitch=0 using PID...")
     gimbal.move_PID(90, 135)

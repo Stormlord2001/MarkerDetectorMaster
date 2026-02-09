@@ -88,52 +88,6 @@ class decode_marker():
             #print("samples:", samples)
             return None
 
-        
-        
-        if voted_marker_id in self.ring_codes:
-            # Plot the circle around the marker
-            if voted_marker_id == 39:
-                scaled = cv2.resize(marker, (0,0), fx=10.0, fy=10.0)
-                cv2.imshow("marker", scaled)
-                cv2.imshow("marker_bin", cv2.resize(marker_bin * 255, (0,0), fx=10.0, fy=10.0))
-                #print("samples:", samples)
-            cv2.circle(image, (center[0], center[1]), self.r_code_outer, (0,255,0), 2)
-            return voted_marker_id
-        else:
-            
-            print("marker id not found in ring codes: ", voted_marker_id, samples, ring_code_count)
-            if voted_marker_id == 39 and ring_code_count[voted_marker_id] >= 2:
-                scaled = cv2.resize(marker, (0,0), fx=10.0, fy=10.0)
-                cv2.imshow("marker", scaled)
-                cv2.imshow("marker_bin", cv2.resize(marker_bin * 255, (0,0), fx=10.0, fy=10.0))
-                print("samples:", samples)
-                #cv2.waitKey(0)
-            return None
-        """if samples.count(voted_marker_id) > (len(samples)*1/2):
-            #print("marker is good")
-
-            if voted_marker_id in self.ring_codes:
-                # Plot the circle around the marker
-                if voted_marker_id == 119:
-                    scaled = cv2.resize(marker, (0,0), fx=10.0, fy=10.0)
-                    cv2.imshow("marker", scaled)
-                    cv2.imshow("marker_bin", cv2.resize(marker_bin * 255, (0,0), fx=10.0, fy=10.0))
-                    print("samples:", samples)
-                cv2.circle(image, (center[0], center[1]), self.r_code_outer, (0,255,0), 2)
-                return voted_marker_id
-            else:
-                print("marker id not found in ring codes")
-                return None
-        else:
-            #print("marker is bad")
-            if voted_marker_id == 119:
-                scaled = cv2.resize(marker, (0,0), fx=10.0, fy=10.0)
-                cv2.imshow("marker", scaled)
-                cv2.imshow("marker_bin", cv2.resize(marker_bin * 255, (0,0), fx=10.0, fy=10.0))
-                print("samples:", samples)
-                cv2.waitKey(0)
-                
-            return None"""
 
     def list_to_binary(self, list):
         bits = [int(b) for b in list]

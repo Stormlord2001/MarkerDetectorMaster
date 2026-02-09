@@ -86,12 +86,7 @@ class CameraDriver:
             cv2.namedWindow('filterdemo', cv2.WINDOW_AUTOSIZE)
 
         # Select the camera where the images should be grabbed from.
-        #set_camera_focus()
-        #self.camera = cv2.VideoCapture("Videos/.mp4")
-        #self.camera = cv2.VideoCapture("Videos/markersRotatingPulsing.mp4")
-        #self.camera = cv2.VideoCapture("nFoldEdgeCodeDisk/output.avi")
         self.camera = cv2.VideoCapture(VideoFile)
-        #self.set_camera_resolution()
 
         # Storage for image processing.
         self.current_frame = None
@@ -101,17 +96,12 @@ class CameraDriver:
 
         # Storage for trackers.
         self.trackers = []
-        self.old_locations = []
 
         # Initialize trackers.
         for marker_order in marker_orders:
             temp = MarkerTracker(marker_order, default_kernel_size, scaling_parameter, downscale_factor)
             self.trackers.append(temp)
-            self.old_locations.append(MarkerPose(None, None, None))
 
-    def set_camera_resolution(self):
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
     def get_image(self):
         self.current_frame = self.camera.read()[1]
@@ -128,8 +118,6 @@ class CameraDriver:
             poses = self.trackers[k].locate_marker(reduced_image)
             for pose in poses:
                 self.locations.append(pose)
-
-        self.old_locations = self.locations
 
     def draw_detected_markers(self):
         if show_image is True:
