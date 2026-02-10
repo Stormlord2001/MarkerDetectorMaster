@@ -7,7 +7,7 @@ except ImportError:
     from nFoldEdgeCodeDisk.MarkerTracker import MarkerTracker
 
 # parameters
-show_image = False
+show_image = True
 print_iteration_time = True
 check_keystroke = True
 list_of_markers_to_find = [5]
@@ -26,6 +26,7 @@ class CameraDriver:
 
         # Select the camera where the images should be grabbed from.
         self.camera = cv2.VideoCapture(VideoFile)
+        #self.camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'BGR3'))
         self.set_camera_resolution()
         # Reduce buffering
         self.camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # keep only the latest frame
