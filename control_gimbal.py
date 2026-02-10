@@ -233,7 +233,7 @@ class GimbalCommand:
             roll_speed = toInt(data[22:24]+data[20:22]) / 10.
             #print(f"Yaw: {yaw: 6.1f}, Pitch: {pitch: 6.1f}, Roll: {roll: 6.1f}, Yaw Speed: {yaw_speed: 6.1f}, Pitch Speed: {pitch_speed: 6.1f}, Roll Speed: {roll_speed: 6.1f}")
             return yaw, pitch, roll
-        return None
+        return None, None, None
     
     def move_PID(self, desired_yaw, desired_pitch):
         """
@@ -250,6 +250,10 @@ class GimbalCommand:
 
         while True:
             current_yaw, current_pitch, _ = self.get_attitude()
+            if current_yaw is None or current_pitch is None:
+                print("Failed to get current attitude, retrying...")
+                continue
+
             yaw_error = current_yaw - desired_yaw
             pitch_error = desired_pitch - current_pitch
 
