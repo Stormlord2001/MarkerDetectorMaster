@@ -7,7 +7,7 @@ except ImportError:
     from nFoldEdgeCodeDisk.MarkerTracker import MarkerTracker
 
 # parameters
-show_image = True
+show_image = False
 print_iteration_time = True
 check_keystroke = True
 list_of_markers_to_find = [5]
