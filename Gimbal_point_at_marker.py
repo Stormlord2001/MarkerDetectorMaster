@@ -33,10 +33,10 @@ def main():
                         marker_ids[2]: (0.495, 0.495, 0.0),
                         marker_ids[3]: (-0.495, 0.495, 0.0)}
 
-    downsacle_factor = 2
+    downsacle_factor = 1
     lp = PoseEstimator(intrinsics, dist_coeffs, marker_ids, marker_placements, alpha=0.5, max_reproj_error=10.0, downscale_factor=downsacle_factor)
 
-    cd = ml.CameraDriver([5], marker_ids=marker_ids, default_kernel_size=int(26/downsacle_factor), scaling_parameter=1000, downscale_factor=downsacle_factor, VideoFile=0)#, VideoFile="output.avi") 
+    cd = ml.CameraDriver([5], marker_ids=marker_ids, default_kernel_size=int(13/downsacle_factor), scaling_parameter=1000, downscale_factor=downsacle_factor, VideoFile=0)#, VideoFile="output.avi") 
 
     t0 = time.time()
     total_frames = 0

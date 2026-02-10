@@ -26,6 +26,7 @@ class CameraDriver:
 
         # Select the camera where the images should be grabbed from.
         self.camera = cv2.VideoCapture(VideoFile)
+        self.set_camera_resolution()
         # Reduce buffering
         self.camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # keep only the latest frame
         # Disable auto exposure
@@ -53,6 +54,9 @@ class CameraDriver:
             temp = MarkerTracker(marker_order, default_kernel_size, scaling_parameter, marker_ids, downscale_factor)
             self.trackers.append(temp)
 
+    def set_camera_resolution(self):
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 
     def get_image(self):
         self.current_frame = self.camera.read()[1]
